@@ -1,0 +1,27 @@
+{
+  "name": "install-ispc-action",
+  "version": "1.0.0",
+  "description": "Install ISPC GitHub action.",
+  "main": "src/main.js",
+  "type": "module",
+  "scripts": {
+    "run": "node src/main.js",
+    "build": "esbuild --bundle src/main.js --outfile=build/main.cjs --platform=node --format=cjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ispc/install-ispc-action.git"
+  },
+  "author": "Indy Ray",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/ispc/install-ispc-action/issues"
+  },
+  "homepage": "https://github.com/ispc/install-ispc-action#readme",
+  "dependencies": {
+    "@actions/tool-cache": "^2.0.1"
+  },
+  "devDependencies": {
+    "esbuild": "^0.21.5"
+  }
+}
