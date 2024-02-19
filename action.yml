@@ -1,0 +1,16 @@
+name: "Install ispc"
+description: "Install Intel ispc."
+author: "Indy Ray"
+inputs:
+  version:
+    description: "Release version of ispc to install."
+    required: false
+  platform:
+    description: "Platform to download release of ispc for."
+    required: false
+  architecture:
+    description: "Architecture to download release of ispc for, on MacOS and Linux platforms."
+    required: false
+runs:
+  using: 'node20'
+  main: 'build/main.cjs'
