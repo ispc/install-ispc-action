@@ -1,0 +1,12 @@
+name: "Install ispc"
+description: "Install Intel ispc."
+inputs:
+  version:
+    description: "Release version of ispc to install."
+    required: true
+  platform:
+    description: "Platform to download release of ispc for."
+    required: true
+runs:
+  using: 'node20'
+  main: 'src/main.js'

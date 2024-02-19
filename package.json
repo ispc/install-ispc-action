@@ -1,0 +1,23 @@
+{
+  "name": "install-ispc-action",
+  "version": "1.0.0",
+  "description": "Install ISPC GitHub action.",
+  "main": "src/main.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ScatteredRay/install-ispc-action.git"
+  },
+  "author": "Indy Ray",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ScatteredRay/install-ispc-action/issues"
+  },
+  "homepage": "https://github.com/ScatteredRay/install-ispc-action#readme",
+  "dependencies": {
+    "@actions/core": "^1.10.1"
+  }
+}
