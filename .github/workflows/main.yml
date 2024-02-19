@@ -2,13 +2,23 @@ on: [push]
 
 jobs:
   test-ispc:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - os: ubuntu-latest
+          platform: linux
+
+        - os: windows-latest
+          platform: windows
+
+    runs-on: ${{ matrix.os }}
     name: Install ispc Test
     steps:
     - name: install ispc step
       uses: ScatteredRay/install-ispc-action@main
       with:
         version: 1.23.0
-        platform: linux
+        platform: ${{ matrix.platform }}
     - name: version
       run: ispc --version
