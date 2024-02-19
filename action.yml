@@ -9,4 +9,4 @@ inputs:
     required: true
 runs:
   using: 'node20'
-  main: 'src/main.js'
+  main: 'build/main.cjs'
