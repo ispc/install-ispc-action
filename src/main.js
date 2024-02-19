@@ -64,7 +64,7 @@ async function getIspc(version, platform) {
     let outFile = `ispc-${version}-${platform}${extension}`;
     await extractFile(await getFileTo(url, outFile));
     let binDir = `ispc-${version}-${platform}/bin`;
-    return binDir
+    return path.resolve(binDir);
 }
 
 (async function() {
@@ -73,7 +73,8 @@ async function getIspc(version, platform) {
         let platform = core.getInput('platform', {required: true});
         let exe = platform === "windows" ? ".exe" : "";
         let ispcBinDir = await getIspc(version, platform);
-        await exec(`${ispcBinDir}/ispc${exe} --version`);
+        let ispcExe = path.resolve(`${ispcBinDir}/ispc${exe}`);
+        await exec(`${ispcExe} --version`);
         core.addPath(ispcBinDir);
     } catch(error) {
         core.setFailed(error.message)
