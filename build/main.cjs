@@ -18871,10 +18871,14 @@ async function getFileTo(url, outFile) {
       if (res.statusCode !== 200) {
         reject(new Error(`Unexpected response: ${res.statusCode}`));
       }
+      let datas = [];
       res.on("data", (data) => {
-        file.write(data);
+        datas.push(data);
       });
-      res.on("end", () => {
+      res.on("end", async () => {
+        for (let data of datas) {
+          await file.write(data);
+        }
         file.close();
         resolve2();
       });
@@ -18885,7 +18889,6 @@ async function getFileTo(url, outFile) {
   return outFile;
 }
 function exec2(command) {
-  console.log("Exec: ", command);
   return new Promise((resolve2, reject) => {
     let proc = child_process.exec(command);
     proc.stderr.pipe(process.stderr);

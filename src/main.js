@@ -16,10 +16,15 @@ async function getFileTo(url, outFile) {
             if(res.statusCode !== 200) {
                 reject(new Error(`Unexpected response: ${res.statusCode}`));
             }
+            let datas = [];
             res.on('data', (data) => {
-                file.write(data);
+                // It seems that it's possible for these to resolve out of order on certain platforms if we just write them here.
+                datas.push(data);
             });
-            res.on('end', () => {
+            res.on('end', async () => {
+                for(let data of datas) {
+                    await file.write(data);
+                }
                 file.close();
                 resolve();
             });
