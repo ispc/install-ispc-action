@@ -38,10 +38,24 @@ async function getFileTo(url, outFile) {
 function exec(command) {
     return new Promise((resolve, reject) => {
         let proc = child_process.exec(command);
+        let output = "";
         proc.stderr.pipe(process.stderr);
         proc.stdout.pipe(process.stdout);
-        proc.on('exit', resolve);
-        proc.on('error', reject);
+        proc.stdout.on('data', (chunk) => {
+            output += chunk;
+        });
+        proc.on('exit', () => {
+            resolve({
+                exitCode: proc.exitCode,
+                output: output
+            });
+        });
+        proc.on('error', () => {
+            reject({
+                exitCode: -1,
+                output: output
+            });
+        });
     });
 }
 
@@ -137,7 +151,19 @@ async function getLatestVersion() {
         let ispcBinDir = await getIspc(version, platform, architecture);
         let ispcExe = path.resolve(`${ispcBinDir}/ispc${exe}`);
         let res = await exec(`${ispcExe} --version`);
-        console.log(res);
+        if(res.exitCode === 0) {
+            let match = res.output.match(/([0-9]+)\.([0-9]+)\.([0-9]+)/);
+            let matchVer = match[0];
+            if(matchVer === version) {
+                console.log(`ISPC (${version}) Installation Success`);
+            }
+            else {
+                throw new Error(`Unable to match ispc version ${version} with ${matchVer}`);
+            }
+        }
+        else {
+            throw new Error(`Unable to run ispc at ${ispcExe}`);
+        }
         core.addPath(ispcBinDir);
     } catch(error) {
         core.setFailed(error.message)
