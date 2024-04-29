@@ -13198,7 +13198,7 @@ var require_fetch = __commonJS({
         this.emit("terminated", error);
       }
     };
-    function fetch(input, init = {}) {
+    function fetch2(input, init = {}) {
       webidl.argumentLengthCheck(arguments, 1, { header: "globalThis.fetch" });
       const p = createDeferredPromise();
       let requestObject;
@@ -14128,7 +14128,7 @@ var require_fetch = __commonJS({
       }
     }
     module2.exports = {
-      fetch,
+      fetch: fetch2,
       Fetch,
       fetching,
       finalizeAndReportTiming
@@ -17400,7 +17400,7 @@ var require_undici = __commonJS({
     module2.exports.getGlobalDispatcher = getGlobalDispatcher;
     if (util.nodeMajor > 16 || util.nodeMajor === 16 && util.nodeMinor >= 8) {
       let fetchImpl = null;
-      module2.exports.fetch = async function fetch(resource) {
+      module2.exports.fetch = async function fetch2(resource) {
         if (!fetchImpl) {
           fetchImpl = require_fetch().fetch;
         }
@@ -18869,7 +18869,7 @@ async function getFileTo(url, outFile) {
         return;
       }
       if (res.statusCode !== 200) {
-        reject(new Error(`Unexpected response: ${res.statusCode}`));
+        reject(new Error(`Unexpected response: ${res.statusCode} at ${url2}`));
       }
       let datas = [];
       res.on("data", (data) => {
@@ -18891,10 +18891,24 @@ async function getFileTo(url, outFile) {
 function exec2(command) {
   return new Promise((resolve2, reject) => {
     let proc = child_process.exec(command);
+    let output = "";
     proc.stderr.pipe(process.stderr);
     proc.stdout.pipe(process.stdout);
-    proc.on("exit", resolve2);
-    proc.on("error", reject);
+    proc.stdout.on("data", (chunk) => {
+      output += chunk;
+    });
+    proc.on("exit", () => {
+      resolve2({
+        exitCode: proc.exitCode,
+        output
+      });
+    });
+    proc.on("error", () => {
+      reject({
+        exitCode: -1,
+        output
+      });
+    });
   });
 }
 async function extractFile(file) {
@@ -18908,23 +18922,86 @@ async function extractFile(file) {
   }
   return file;
 }
-async function getIspc(version2, platform) {
-  version2 = `v${version2}`;
+function validatePlatform(platform) {
+  let platformList = [
+    "linux",
+    "macOS",
+    "windows"
+  ];
+  if (!platformList.includes(platform)) {
+    throw new Error(`Platform ${platform} not in list of supported platforms: ${platformList}`);
+  }
+}
+function validateArch(platform, arch) {
+  let archMap = {
+    "linux": [
+      "oneapi",
+      "aarch64"
+    ],
+    "macOS": [
+      "x86_64",
+      "arm64",
+      "universal"
+    ]
+  };
+  if (!arch) {
+    return;
+  }
+  if (!archMap[platform] || !archMap[platform].includes(arch)) {
+    throw new Error(`Platform ${platform} does not support arch ${arch}`);
+  }
+}
+async function getIspc(version2, platform, architecture) {
+  let versionStr = `v${version2}`;
+  let archPrefix = architecture === "oneapi" ? "-" : ".";
+  let archStr = architecture ? `${archPrefix}${architecture}` : "";
   let extension = platform === "windows" ? ".zip" : ".tar.gz";
-  let url = `https://github.com/ispc/ispc/releases/download/${version2}/ispc-${version2}-${platform}${extension}`;
-  let outFile = `ispc-${version2}-${platform}${extension}`;
+  let url = `https://github.com/ispc/ispc/releases/download/${versionStr}/ispc-${versionStr}-${platform}${archStr}${extension}`;
+  let outFile = `ispc-${versionStr}-${platform}${archStr}${extension}`;
   await extractFile(await getFileTo(url, outFile));
-  let binDir = `ispc-${version2}-${platform}/bin`;
+  if (architecture === "oneapi") {
+    archStr = "";
+  }
+  let binDir = `ispc-${versionStr}-${platform}${archStr}/bin`;
   return path.resolve(binDir);
+}
+async function getLatestVersion() {
+  let response = await fetch(`https://api.github.com/repos/ispc/ispc/releases/latest`);
+  if (response.status !== 200) {
+    throw new Error(`Unable to query latest version`);
+  }
+  let body = await response.json();
+  let version2 = body.tag_name;
+  if (version2.charAt(0) === "v") {
+    version2 = version2.substring(1);
+  }
+  return version2;
 }
 (async function() {
   try {
-    let version2 = core.getInput("version", { required: true });
+    let version2 = core.getInput("version");
+    if (!version2 || version2 === "latest") {
+      version2 = await getLatestVersion();
+    }
     let platform = core.getInput("platform", { required: true });
+    let architecture = core.getInput("architecture");
+    validatePlatform(platform);
+    validateArch(platform, architecture);
     let exe = platform === "windows" ? ".exe" : "";
-    let ispcBinDir = await getIspc(version2, platform);
+    let ispcBinDir = await getIspc(version2, platform, architecture);
     let ispcExe = path.resolve(`${ispcBinDir}/ispc${exe}`);
-    await exec2(`${ispcExe} --version`);
+    let res = await exec2(`${ispcExe} --version`);
+    if (res.exitCode === 0) {
+      let match = res.output.match(/([0-9]+)\.([0-9]+)\.([0-9]+)/);
+      let matchVer = match[0];
+      if (matchVer === version2) {
+        console.log(`ISPC (${version2}) Installation Success`);
+      } else {
+        throw new Error(`Unable to match ispc version ${version2} with ${matchVer}`);
+      }
+    } else {
+      throw new Error(`Unable to run ispc at ${ispcExe}`);
+    }
     core.addPath(ispcBinDir);
   } catch (error) {
     core.setFailed(error.message);
