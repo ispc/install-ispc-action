@@ -7,6 +7,9 @@ inputs:
   platform:
     description: "Platform to download release of ispc for."
     required: true
+  architecture:
+    description: "Architecture to download relase of ispc for, on MacOS and Linux platforms."
+    required: false
 runs:
   using: 'node20'
   main: 'build/main.cjs'

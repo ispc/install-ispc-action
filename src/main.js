@@ -61,14 +61,52 @@ async function extractFile(file) {
     return file;
 }
 
-async function getIspc(version, platform) {
+function validatePlatform(platform) {
+    let platformList = [
+        'linux',
+        'macOS',
+        'windows'
+    ];
+    if(!platformList.includes(platform)) {
+        throw new Error(`Platform ${platform} not in list of supported platforms: ${platformList}`);
+    }
+}
+
+
+function validateArch(platform, arch) {
+    let archMap = {
+        "linux" : [
+            "oneapi",
+            "aarch64"
+        ],
+        "macOS" : [
+            "x86_64",
+            "arm64",
+            "universal"
+        ]
+    };
+    if(!arch) {
+        return;
+    }
+    if(!archMap[platform] || !archMap[platform].includes(arch)) {
+        throw new Error(`Platform ${platform} does not support arch ${arch}`);
+    }
+}
+
+async function getIspc(version, platform, architecture) {
     // TODO: Implement retry!
-    version = `v${version}`;
+    let versionStr = `v${version}`;
+    let archPrefix = architecture === 'oneapi' ? '-' : '.';
+    let archStr = architecture ? `${archPrefix}${architecture}` : "";
     let extension = platform === "windows" ? ".zip" : ".tar.gz";
-    let url = `https://github.com/ispc/ispc/releases/download/${version}/ispc-${version}-${platform}${extension}`;
-    let outFile = `ispc-${version}-${platform}${extension}`;
+    let url = `https://github.com/ispc/ispc/releases/download/${versionStr}/ispc-${versionStr}-${platform}${archStr}${extension}`;
+    let outFile = `ispc-${versionStr}-${platform}${archStr}${extension}`;
     await extractFile(await getFileTo(url, outFile));
-    let binDir = `ispc-${version}-${platform}/bin`;
+    if(architecture === 'oneapi') {
+        // oneapi just gets extracted to ispc-<version>-<platform>
+        archStr = '';
+    }
+    let binDir = `ispc-${versionStr}-${platform}${archStr}/bin`;
     return path.resolve(binDir);
 }
 
@@ -92,10 +130,14 @@ async function getLatestVersion() {
             version = await getLatestVersion();
         }
         let platform = core.getInput('platform', {required: true});
+        let architecture = core.getInput('architecture');
+        validatePlatform(platform);
+        validateArch(platform, architecture);
         let exe = platform === "windows" ? ".exe" : "";
-        let ispcBinDir = await getIspc(version, platform);
+        let ispcBinDir = await getIspc(version, platform, architecture);
         let ispcExe = path.resolve(`${ispcBinDir}/ispc${exe}`);
-        await exec(`${ispcExe} --version`);
+        let res = await exec(`${ispcExe} --version`);
+        console.log(res);
         core.addPath(ispcBinDir);
     } catch(error) {
         core.setFailed(error.message)
