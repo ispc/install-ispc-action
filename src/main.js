@@ -14,7 +14,7 @@ async function getFileTo(url, outFile) {
                 return;
             }
             if(res.statusCode !== 200) {
-                reject(new Error(`Unexpected response: ${res.statusCode}`));
+                reject(new Error(`Unexpected response: ${res.statusCode} at ${url}`));
             }
             let datas = [];
             res.on('data', (data) => {
@@ -72,9 +72,25 @@ async function getIspc(version, platform) {
     return path.resolve(binDir);
 }
 
+async function getLatestVersion() {
+    let response = await fetch(`https://api.github.com/repos/ispc/ispc/releases/latest`);
+    if(response.status !== 200) {
+        throw new Error (`Unable to query latest version`);
+    }
+    let body = await response.json();
+    let version = body.tag_name;
+    if(version.charAt(0) === 'v') {
+        version = version.substring(1);
+    }
+    return version;
+}
+
 (async function() {
     try {
-        let version = core.getInput('version', {required: true});
+        let version = core.getInput('version');
+        if(!version || version === 'latest') {
+            version = await getLatestVersion();
+        }
         let platform = core.getInput('platform', {required: true});
         let exe = platform === "windows" ? ".exe" : "";
         let ispcBinDir = await getIspc(version, platform);

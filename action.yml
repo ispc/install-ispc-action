@@ -3,7 +3,7 @@ description: "Install Intel ispc."
 inputs:
   version:
     description: "Release version of ispc to install."
-    required: true
+    required: false
   platform:
     description: "Platform to download release of ispc for."
     required: true
