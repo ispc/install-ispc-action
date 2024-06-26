@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 import * as core from '@actions/core';
 import * as fs from "fs/promises";
 import * as https from "https";

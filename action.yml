@@ -1,5 +1,6 @@
 name: "Install ispc"
 description: "Install Intel ispc."
+author: "Indy Ray"
 inputs:
   version:
     description: "Release version of ispc to install."
