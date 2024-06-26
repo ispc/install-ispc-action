@@ -12,6 +12,9 @@ jobs:
         - os: windows-latest
           platform: windows
 
+        - os: macos-latest
+          platform: macOS
+
     runs-on: ${{ matrix.os }}
     name: Install ispc Test
     steps:

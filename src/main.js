@@ -86,6 +86,7 @@ function validatePlatform(platform) {
     if(!platformList.includes(platform)) {
         throw new Error(`Platform ${platform} not in list of supported platforms: ${platformList}`);
     }
+    return platform;
 }
 
 
@@ -101,12 +102,21 @@ function validateArch(platform, arch) {
             "universal"
         ]
     };
+    let defaultArch = {
+        "macOS" : "universal"
+    };
     if(!arch) {
-        return;
+        if(platform in defaultArch) {
+            arch = defaultArch[platform];
+        }
+        else {
+            return;
+        }
     }
     if(!archMap[platform] || !archMap[platform].includes(arch)) {
         throw new Error(`Platform ${platform} does not support arch ${arch}`);
     }
+    return arch;
 }
 
 async function getIspc(version, platform, architecture) {
@@ -145,10 +155,8 @@ async function getLatestVersion() {
         if(!version || version === 'latest') {
             version = await getLatestVersion();
         }
-        let platform = core.getInput('platform', {required: true});
-        let architecture = core.getInput('architecture');
-        validatePlatform(platform);
-        validateArch(platform, architecture);
+        let platform = validatePlatform(core.getInput('platform', {required: true}));
+        let architecture = validateArch(platform, core.getInput('architecture'));
         let exe = platform === "windows" ? ".exe" : "";
         let ispcBinDir = await getIspc(version, platform, architecture);
         let ispcExe = path.resolve(`${ispcBinDir}/ispc${exe}`);
