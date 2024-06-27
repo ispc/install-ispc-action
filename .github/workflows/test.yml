@@ -1,0 +1,67 @@
+name: Test install ISPC action
+
+permissions: read-all
+
+on:
+  workflow_dispatch:
+    inputs:
+      repo:
+        description: 'Repository to checkout (owner/repo)'
+        required: true
+        default: 'ispc/install-ispc-action'
+      branch:
+        description: 'Branch to checkout'
+        required: true
+        default: 'main'
+  pull_request:
+
+jobs:
+  latest:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-12]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ inputs.repo || github.repository }}
+          ref: ${{ inputs.branch || github.ref }}
+
+      - name: Install ISPC
+        uses: ./
+
+      - name: ISPC version
+        run: |
+          ispc --version
+
+      - name: ISPC support matrix
+        run: |
+          ispc --support-matrix
+
+  specific:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-12]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ inputs.repo || github.repository }}
+          ref: ${{ inputs.branch || github.ref }}
+
+      - name: Install ISPC
+        uses: ./
+        with:
+          version: 1.23.0
+
+      - name: ISPC version
+        run: |
+          ispc --version
+
+      - name: ISPC support matrix
+        run: |
+          ispc --support-matrix
