@@ -1,0 +1,29 @@
+name: Build install ISPC action
+
+permissions: read-all
+
+on:
+  workflow_dispatch:
+    inputs:
+      repo:
+        description: 'Repository to checkout (owner/repo)'
+        required: true
+        default: 'ispc/install-ispc-action'
+      branch:
+        description: 'Branch to checkout'
+        required: true
+        default: 'main'
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build action
+        run: |
+          npm install
+          npm run build
+          git diff --exit-code
