@@ -21987,14 +21987,31 @@ var import_path = require("path");
 var import_tool_cache = __toESM(require_tool_cache(), 1);
 var import_core = __toESM(require_core(), 1);
 var import_node_os = require("node:os");
+var import_node_fs = require("node:fs");
+var import_node_child_process = require("node:child_process");
 async function getLatestVersion() {
+  let version2;
   let response = await fetch(`https://api.github.com/repos/ispc/ispc/releases/latest`);
   if (response.status !== 200) {
     let errorDetails = await response.text();
-    throw new Error(`Unable to query latest version: ${response.statusText} - ${errorDetails}`);
+    console.log(`Unable to query latest version: ${response.statusText} - ${errorDetails}`);
+    try {
+      const repoPath = "ispc-repo";
+      if (!(0, import_node_fs.existsSync)(repoPath)) {
+        (0, import_node_child_process.execSync)(`git clone --depth=1 https://github.com/ispc/ispc.git ${repoPath}`);
+      }
+      console.log("Fetching latest tags from the repository...");
+      (0, import_node_child_process.execSync)(`git -C ${repoPath} fetch --tags`);
+      let latestTagSHA = (0, import_node_child_process.execSync)(`git -C ${repoPath} rev-list --tags --max-count=1`).toString().trim();
+      version2 = (0, import_node_child_process.execSync)(`git -C ${repoPath} describe --tags ${latestTagSHA}`).toString().trim();
+      (0, import_node_fs.rmSync)(repoPath, { recursive: true, force: true });
+    } catch (gitError) {
+      throw new Error(`Unable to get latest version from git repository: ${gitError.message}`);
+    }
+  } else {
+    let body = await response.json();
+    version2 = body.tag_name;
   }
-  let body = await response.json();
-  let version2 = body.tag_name;
   if (version2.charAt(0) === "v") {
     version2 = version2.substring(1);
   }
@@ -22104,8 +22121,8 @@ async function getIspc(version2, platform, architecture) {
   let archPrefix = architecture === "oneapi" ? "-" : ".";
   let archStr = architecture ? `${archPrefix}${architecture}` : "";
   let extension = platform === "windows" ? ".zip" : ".tar.gz";
-  let archive_name = `ispc-${version2}-${platform}${archStr}`;
-  let url = `https://github.com/ispc/ispc/releases/download/${version2}/${archive_name}${extension}`;
+  let archiveName = `ispc-${version2}-${platform}${archStr}`;
+  let url = `https://github.com/ispc/ispc/releases/download/${version2}/${archiveName}${extension}`;
   let dir = `ispc-releases`;
   console.log(`Downloading ISPC archive ${url}`);
   const archive = await (0, import_tool_cache.downloadTool)(url);
@@ -22114,7 +22131,7 @@ async function getIspc(version2, platform, architecture) {
   } else {
     await (0, import_tool_cache.extractTar)(archive, dir);
   }
-  let binDir = (0, import_path.resolve)(dir, archive_name, "bin");
+  let binDir = (0, import_path.resolve)(dir, archiveName, "bin");
   return binDir;
 }
 (async function() {
