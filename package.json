@@ -6,7 +6,9 @@
   "type": "module",
   "scripts": {
     "run": "node src/main.js",
-    "build": "esbuild --bundle src/main.js --outfile=build/main.cjs --platform=node --format=cjs"
+    "build": "esbuild --bundle src/main.js --outfile=build/main.cjs --platform=node --format=cjs",
+    "lint": "npx standard src/main.js",
+    "lint-fix": "npx standard --fix src/main.js"
   },
   "repository": {
     "type": "git",

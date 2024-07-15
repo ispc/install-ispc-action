@@ -10,11 +10,20 @@ Node.js, use your OS package manager or follow the instruction on the
 npm install
 ```
 
+# Lint Code
+
+```bash
+npm run lint-fix
+```
+
 # Bundle Action
 
 ```bash
 npm run build
 ```
+
+It is important to bundle the action before running it locally or pushing it to
+the remote repository.
 
 # Run Local Tests
 
