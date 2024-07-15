@@ -58,6 +58,18 @@ jobs:
         with:
           version: 1.23.0
 
+      - name: Check ISPC version
+        shell: pwsh
+        run: |
+          $output = & ispc --version | Out-String
+          if ($output -match "1.23.0") {
+            Write-Output "Expected version 1.23.0 found"
+            exit 0
+          } else {
+            Write-Output "Expected version 1.23.0, got $output"
+            exit 1
+          }
+
       - name: ISPC version
         run: |
           ispc --version
