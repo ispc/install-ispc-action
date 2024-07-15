@@ -21991,9 +21991,9 @@ var import_node_fs = require("node:fs");
 var import_node_child_process = require("node:child_process");
 async function getLatestVersion() {
   let version2;
-  let response = await fetch(`https://api.github.com/repos/ispc/ispc/releases/latest`);
+  const response = await fetch("https://api.github.com/repos/ispc/ispc/releases/latest");
   if (response.status !== 200) {
-    let errorDetails = await response.text();
+    const errorDetails = await response.text();
     console.log(`Unable to query latest version: ${response.statusText} - ${errorDetails}`);
     try {
       const repoPath = "ispc-repo";
@@ -22002,14 +22002,14 @@ async function getLatestVersion() {
       }
       console.log("Fetching latest tags from the repository...");
       (0, import_node_child_process.execSync)(`git -C ${repoPath} fetch --tags`);
-      let latestTagSHA = (0, import_node_child_process.execSync)(`git -C ${repoPath} rev-list --tags --max-count=1`).toString().trim();
+      const latestTagSHA = (0, import_node_child_process.execSync)(`git -C ${repoPath} rev-list --tags --max-count=1`).toString().trim();
       version2 = (0, import_node_child_process.execSync)(`git -C ${repoPath} describe --tags ${latestTagSHA}`).toString().trim();
       (0, import_node_fs.rmSync)(repoPath, { recursive: true, force: true });
     } catch (gitError) {
       throw new Error(`Unable to get latest version from git repository: ${gitError.message}`);
     }
   } else {
-    let body = await response.json();
+    const body = await response.json();
     version2 = body.tag_name;
   }
   if (version2.charAt(0) === "v") {
@@ -22019,7 +22019,7 @@ async function getLatestVersion() {
   return version2;
 }
 function validateVersion(version2) {
-  let versionRegex = /^[0-9]+\.[0-9]+\.[0-9]+$/;
+  const versionRegex = /^[0-9]+\.[0-9]+\.[0-9]+$/;
   if (!version2.match(versionRegex)) {
     throw new Error(`Invalid version ${version2}`);
   }
@@ -22030,11 +22030,11 @@ async function getVersion() {
     version2 = await getLatestVersion();
   }
   validateVersion(version2);
-  let versionStr = `v${version2}`;
+  const versionStr = `v${version2}`;
   return versionStr;
 }
 function validatePlatform(platform) {
-  let platformList = [
+  const platformList = [
     "linux",
     "macOS",
     "windows"
@@ -22066,18 +22066,18 @@ function getPlatform() {
   return platform;
 }
 function validateArch(platform, arch) {
-  let archMap = {
-    "linux": [
+  const archMap = {
+    linux: [
       "oneapi",
       "aarch64",
       ""
     ],
-    "macOS": [
+    macOS: [
       "x86_64",
       "arm64",
       "universal"
     ],
-    "windows": [
+    windows: [
       ""
     ]
   };
@@ -22118,12 +22118,12 @@ function getArch(platform) {
   return arch;
 }
 async function getIspc(version2, platform, architecture) {
-  let archPrefix = architecture === "oneapi" ? "-" : ".";
-  let archStr = architecture ? `${archPrefix}${architecture}` : "";
-  let extension = platform === "windows" ? ".zip" : ".tar.gz";
-  let archiveName = `ispc-${version2}-${platform}${archStr}`;
-  let url = `https://github.com/ispc/ispc/releases/download/${version2}/${archiveName}${extension}`;
-  let dir = `ispc-releases`;
+  const archPrefix = architecture === "oneapi" ? "-" : ".";
+  const archStr = architecture ? `${archPrefix}${architecture}` : "";
+  const extension = platform === "windows" ? ".zip" : ".tar.gz";
+  const archiveName = `ispc-${version2}-${platform}${archStr}`;
+  const url = `https://github.com/ispc/ispc/releases/download/${version2}/${archiveName}${extension}`;
+  const dir = "ispc-releases";
   console.log(`Downloading ISPC archive ${url}`);
   const archive = await (0, import_tool_cache.downloadTool)(url);
   if (extension === ".zip") {
@@ -22131,15 +22131,15 @@ async function getIspc(version2, platform, architecture) {
   } else {
     await (0, import_tool_cache.extractTar)(archive, dir);
   }
-  let binDir = (0, import_path.resolve)(dir, archiveName, "bin");
+  const binDir = (0, import_path.resolve)(dir, archiveName, "bin");
   return binDir;
 }
 (async function() {
   try {
-    let version2 = await getVersion();
-    let platform = getPlatform();
-    let architecture = getArch(platform);
-    let ispcBinDir = await getIspc(version2, platform, architecture);
+    const version2 = await getVersion();
+    const platform = getPlatform();
+    const architecture = getArch(platform);
+    const ispcBinDir = await getIspc(version2, platform, architecture);
     console.log(`Adding ISPC binary directory to PATH: ${ispcBinDir}`);
     (0, import_core.addPath)(ispcBinDir);
   } catch (error) {

@@ -25,5 +25,6 @@ jobs:
       - name: Build action
         run: |
           npm install
+          npm run lint
           npm run build
           git diff --exit-code
