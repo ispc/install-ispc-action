@@ -21752,8 +21752,11 @@ async function getLatestVersion() {
       }
       console.log("Fetching latest tags from the repository...");
       (0, import_node_child_process.execSync)(`git -C ${repoPath} fetch --tags`);
-      const latestTagSHA = (0, import_node_child_process.execSync)(`git -C ${repoPath} rev-list --tags --max-count=1`).toString().trim();
-      version = (0, import_node_child_process.execSync)(`git -C ${repoPath} describe --tags ${latestTagSHA}`).toString().trim();
+      const allTags = (0, import_node_child_process.execSync)(`git -C ${repoPath} tag`).toString().trim().split("\n").filter((tag) => tag !== "trunk-artifacts");
+      if (allTags.length === 0) {
+        throw new Error("No valid releases found.");
+      }
+      version = allTags.map((tag) => ({ tag, commitDate: (0, import_node_child_process.execSync)(`git -C ${repoPath} log -1 --format=%ai ${tag}`).toString().trim() })).sort((a, b) => new Date(b.commitDate) - new Date(a.commitDate))[0].tag;
       (0, import_node_fs.rmSync)(repoPath, { recursive: true, force: true });
     } catch (gitError) {
       throw new Error(`Unable to get latest version from git repository: ${gitError.message}`);
