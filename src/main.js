@@ -26,9 +26,14 @@ async function getLatestVersion () {
 
       console.log('Fetching latest tags from the repository...')
       execSync(`git -C ${repoPath} fetch --tags`)
+      const allTags = execSync(`git -C ${repoPath} tag`).toString().trim().split('\n').filter(tag => tag !== 'trunk-artifacts')
 
-      const latestTagSHA = execSync(`git -C ${repoPath} rev-list --tags --max-count=1`).toString().trim()
-      version = execSync(`git -C ${repoPath} describe --tags ${latestTagSHA}`).toString().trim()
+      if (allTags.length === 0) {
+        throw new Error('No valid releases found.')
+      }
+
+      version = allTags.map(tag => ({ tag, commitDate: execSync(`git -C ${repoPath} log -1 --format=%ai ${tag}`).toString().trim() }))
+        .sort((a, b) => new Date(b.commitDate) - new Date(a.commitDate))[0].tag
 
       rmSync(repoPath, { recursive: true, force: true })
     } catch (gitError) {
