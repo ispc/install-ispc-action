@@ -21,7 +21,7 @@
   },
   "homepage": "https://github.com/ispc/install-ispc-action#readme",
   "dependencies": {
-    "@actions/tool-cache": "^2.0.2"
+    "@actions/tool-cache": "^3.0.0"
   },
   "devDependencies": {
     "esbuild": "^0.25.4"
