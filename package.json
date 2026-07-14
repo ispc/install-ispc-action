@@ -21,10 +21,13 @@
   },
   "homepage": "https://github.com/ispc/install-ispc-action#readme",
   "dependencies": {
-    "@actions/core": "^2.0.3",
+    "@actions/core": "^3.0.1",
     "@actions/tool-cache": "^4.0.0"
   },
   "devDependencies": {
-    "esbuild": "^0.27.2"
+    "esbuild": "^0.28.1"
+  },
+  "overrides": {
+    "undici": "^6.27.0"
   }
 }
