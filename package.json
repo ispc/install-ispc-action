@@ -25,7 +25,7 @@
     "@actions/tool-cache": "^4.0.0"
   },
   "devDependencies": {
-    "esbuild": "^0.28.1"
+    "esbuild": "^0.28.2"
   },
   "overrides": {
     "undici": "6.27.0"
