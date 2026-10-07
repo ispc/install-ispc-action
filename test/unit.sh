@@ -10,13 +10,14 @@
 
 # The script is sourced from a variable path, test inputs are literal on
 # purpose, and each case runs in a subshell that sets its own environment.
-# shellcheck disable=SC1090,SC1091,SC2016,SC2030,SC2031,SC2329
+# shellcheck disable=SC1090,SC1091,SC2016,SC2030,SC2031,SC2317,SC2329
 
 set -uo pipefail
 
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 SCRIPT="$ROOT/install.sh"
-WORK=$(mktemp -d)
+# Physical path: install.sh reports the resolved cwd, like Node did.
+WORK=$(cd "$(mktemp -d)" && pwd -P)
 trap 'rm -rf "$WORK"' EXIT
 
 passed=0
@@ -307,6 +308,8 @@ check "API transport failure" "1|::error::fetch failed" "$RC|$(error_line)"
 # --- git fallback (D1) -----------------------------------------------------
 
 make_repo() {
+  # Annotated tags need a tagger identity, which CI runners don't configure.
+  export GIT_AUTHOR_NAME=t GIT_AUTHOR_EMAIL=t@t GIT_COMMITTER_NAME=t GIT_COMMITTER_EMAIL=t@t
   local repo="$WORK/upstream"
   rm -rf "$repo"
   git init -q "$repo"

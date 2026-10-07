@@ -360,9 +360,13 @@ main() {
   download "$url" "$archive"
   extract "$archive" "$type" "$dir"
 
-  local bindir="$PWD/$dir/$name/bin"
+  # Node's path.resolve() used the physical cwd: symlinks resolved (/var ->
+  # /private/var on macOS) and, on Windows, long rather than 8.3 names.
+  local cwd
+  cwd=$(pwd -P) || fail "Unable to determine the current directory"
+  local bindir="$cwd/$dir/$name/bin"
   if is_windows_host && command -v cygpath >/dev/null 2>&1; then
-    bindir=$(cygpath -w "$bindir") || fail "Unable to convert path $bindir"
+    bindir=$(cygpath -w -l "$bindir") || fail "Unable to convert path $bindir"
   fi
   info "Adding ISPC binary directory to PATH: $bindir"
   add_path "$bindir"

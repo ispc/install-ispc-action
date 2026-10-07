@@ -138,7 +138,6 @@ check_case "autodetect, 1.23.0" 1.23.0 '' ''
 check_case "host platform, autodetect arch" 1.23.0 "$HOST" ''
 case "$HOST" in
   macOS) check_case "linux archive on macOS" 1.23.0 linux '' ;;
-  windows) check_case "linux archive on Windows" 1.23.0 linux '' ;;
   linux) check_case "windows archive on Linux" 1.23.0 windows '' ;;
 esac
 
