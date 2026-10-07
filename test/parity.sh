@@ -147,6 +147,11 @@ if [[ $MODE == full ]]; then
   check_case "version latest" latest linux ''
   check_case "version '  latest  '" '  latest  ' linux ''
   check_case "version ' 1.23.0 '" ' 1.23.0 ' linux ''
+  # Use validation failures to compare Unicode trimming without extra downloads.
+  check_case "trim NBSP in version" $'\xc2\xa01.23.0\xc2\xa0' foo '' --expect-fail
+  check_case "trim BOM in version" $'\xef\xbb\xbf1.23.0\xef\xbb\xbf' foo '' --expect-fail
+  check_case "trim Unicode in platform" 1.23.0 $'\xc2\xa0foo\xef\xbb\xbf' '' --expect-fail
+  check_case "trim Unicode in arch" 1.23.0 linux $'\xef\xbb\xbffoo\xc2\xa0' --expect-fail
   for v in v1.23.0 1.23 1.23.0rc1; do
     check_case "version '$v'" "$v" linux '' --expect-fail
   done

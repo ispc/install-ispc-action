@@ -49,6 +49,20 @@ jobs:
       - name: Unit tests (D1, D2, D3, D5, C10)
         run: ${{ matrix.bash }} test/unit.sh
 
+      - name: Real download timeout tests (D2)
+        if: runner.os == 'Linux'
+        run: python3 test/download-timeout.py
+
+  windows-zip:
+    runs-on: windows-2022
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+
+      - name: ZIP extraction without unzip
+        shell: bash
+        run: bash test/windows-zip.sh
+
   parity:
     strategy:
       fail-fast: false
