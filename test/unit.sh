@@ -5,6 +5,8 @@
 # that replays a scripted sequence of responses and serves local fixtures.
 #
 # Usage: bash test/unit.sh
+#
+# Keep this compatible with bash 3.2 (macOS /bin/bash), like install.sh.
 
 # The script is sourced from a variable path, test inputs are literal on
 # purpose, and each case runs in a subshell that sets its own environment.
@@ -57,8 +59,8 @@ stub_curl() {
   printf '%s\n' "$url" >>"$STUB_LOG"
   # Pure bash, so it also works with the limited PATHs used below. An
   # exhausted sequence answers 404.
-  local lines rc code fixture
-  mapfile -t lines <"$STUB_SEQ"
+  local lines=() line rc code fixture
+  while IFS= read -r line; do lines+=("$line"); done <"$STUB_SEQ"
   read -r rc code fixture <<<"${lines[0]:-0 404}"
   if ((${#lines[@]} > 1)); then printf '%s\n' "${lines[@]:1}" >"$STUB_SEQ"; else : >"$STUB_SEQ"; fi
   [[ -n $hdr ]] && printf 'HTTP/1.1 200 Connection established\r\n\r\nHTTP/1.1 %s Reason For %s\r\n\r\n' "$code" "$code" >"$hdr"
@@ -78,7 +80,7 @@ stub_curl() {
 PENDING_SEQ=()
 run_main() {
   CASE_DIR=$(mktemp -d "$WORK/case.XXXXXX")
-  printf '%s\n' "${PENDING_SEQ[@]}" >"$CASE_DIR/seq"
+  printf '%s\n' ${PENDING_SEQ[@]+"${PENDING_SEQ[@]}"} >"$CASE_DIR/seq"
   PENDING_SEQ=()
   mkdir -p "$CASE_DIR/ws" "$CASE_DIR/rt"
   : >"$CASE_DIR/github_path"
