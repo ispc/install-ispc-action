@@ -135,7 +135,7 @@ fi
 
 URL_123=https://github.com/ispc/ispc/releases/download/v1.23.0/ispc-v1.23.0-linux.tar.gz
 
-# --- error escaping (D5) ---------------------------------------------------
+# --- error escaping --------------------------------------------------------
 
 msg_out=$(source "$SCRIPT"; fail $'100% done\r\nnext %0A line\n::warning::injected')
 check "fail escapes %, CR and LF" '::error::100%25 done%0D%0Anext %250A line%0A::warning::injected' "$msg_out"
@@ -216,7 +216,7 @@ url_case "$base/ispc-v1.23.0-windows.zip" "" INPUT_PLATFORM=windows INPUT_ARCHIT
 url_case "$base/ispc-v1.23.0-macOS.x86_64.tar.gz" "" INPUT_PLATFORM=macOS INPUT_ARCHITECTURE=x86_64
 url_case "$base/ispc-v1.23.0-macOS.arm64.tar.gz" "" "INPUT_PLATFORM= macOS " "INPUT_ARCHITECTURE= arm64 "
 
-# --- download retries (D2) -------------------------------------------------
+# --- download retries ------------------------------------------------------
 
 retry_case() {
   local name=$1 rc=$2 attempts=$3 err=$4
@@ -262,7 +262,7 @@ check "ispc is extracted and executable" "fake ispc" "$("$bindir/ispc")"
 check "log lines" "Autodetected platform: 'linux'|Autodetected architecture ''|Downloading ISPC archive $URL_123|Adding ISPC binary directory to PATH: $bindir|" "$(printf '%s\n' "$OUT" | tr '\n' '|')"
 check "workspace has only ispc-releases" "ispc-releases" "$(ls -A "$CASE_DIR/ws")"
 
-# Second install over the first overwrites files (C4).
+# Second install over the first overwrites files.
 OUT=$(
   cd "$CASE_DIR/ws" || exit 99
   printf '%s\n' "0 200 $TGZ" >"$CASE_DIR/seq"
@@ -305,7 +305,7 @@ PENDING_SEQ=('7 000')
 run_main INPUT_VERSION=latest
 check "API transport failure" "1|::error::fetch failed" "$RC|$(error_line)"
 
-# --- git fallback (D1) -----------------------------------------------------
+# --- git fallback ----------------------------------------------------------
 
 make_repo() {
   # Annotated tags need a tagger identity, which CI runners don't configure.
@@ -348,7 +348,7 @@ if command -v git >/dev/null 2>&1; then
     "$RC|$(error_line)"
 fi
 
-# --- lazy tool checks (C10) ------------------------------------------------
+# --- lazy tool checks ------------------------------------------------------
 
 # A PATH with only the listed tools.
 limited_path() {

@@ -3,7 +3,7 @@
 #
 # Differential test: runs the Node implementation (build/main.cjs) and
 # install.sh on the same inputs and compares what users can observe
-# (TRANSITION.md §4.B, B1-B8, and the D5 escaping check).
+# (exit code, annotations, GITHUB_PATH, logs, extracted files, error escaping).
 #
 # Usage: bash test/parity.sh [full|host]
 #   full  every case; explicit platform/arch cases don't depend on the host (default)
@@ -57,13 +57,13 @@ run_impl() {
     fi
   ) >"$WORK/$impl/stdout" 2>"$WORK/$impl/stderr"
   rc=$?
-  printf '%s\n' "$rc" >"$WORK/$impl/B1-exit-code"
+  printf '%s\n' "$rc" >"$WORK/$impl/exit-code"
   # ::debug:: lines only show with step debug logging and aren't part of the contract.
-  grep -a '^::' "$WORK/$impl/stdout" | grep -av '^::debug::' >"$WORK/$impl/B2-workflow-commands"
-  cp "$WORK/github_path" "$WORK/$impl/B3-github-path"
-  grep -a '^Downloading ISPC archive ' "$WORK/$impl/stdout" >"$WORK/$impl/B4-url"
+  grep -a '^::' "$WORK/$impl/stdout" | grep -av '^::debug::' >"$WORK/$impl/workflow-commands"
+  cp "$WORK/github_path" "$WORK/$impl/github-path"
+  grep -a '^Downloading ISPC archive ' "$WORK/$impl/stdout" >"$WORK/$impl/url"
   grep -aE "^(Autodetected |Latest ISPC version is |Adding ISPC binary directory to PATH: )" \
-    "$WORK/$impl/stdout" >"$WORK/$impl/B5-info"
+    "$WORK/$impl/stdout" >"$WORK/$impl/info"
   (
     cd "$WORK/ws" || exit 99
     [[ -d ispc-releases ]] || exit 0
@@ -76,15 +76,15 @@ run_impl() {
         printf '%s %s %s\n' "$f" "$(wc -c <"$f" | tr -d ' ')" "$x"
       fi
     done
-  ) >"$WORK/$impl/B6-tree"
-  (cd "$WORK/ws" && find . -path ./ispc-releases -prune -o -print | LC_ALL=C sort) >"$WORK/$impl/B7-workspace"
-  # B8: run the installed compiler when it can execute on this host.
-  : >"$WORK/$impl/B8-ispc-version"
+  ) >"$WORK/$impl/tree"
+  (cd "$WORK/ws" && find . -path ./ispc-releases -prune -o -print | LC_ALL=C sort) >"$WORK/$impl/workspace"
+  # Run the installed compiler when it can execute on this host.
+  : >"$WORK/$impl/ispc-version"
   if [[ $rc == 0 && ${CASE_PLATFORM:-$HOST} == "$HOST" ]]; then
     local bindir
     bindir=$(tr -d '\r' <"$WORK/github_path" | tail -n 1)
     [[ $HOST == windows ]] && bindir=$(cygpath -u "$bindir")
-    "$bindir/ispc" --version >"$WORK/$impl/B8-ispc-version" 2>&1 || echo "exit $?" >>"$WORK/$impl/B8-ispc-version"
+    "$bindir/ispc" --version >"$WORK/$impl/ispc-version" 2>&1 || echo "exit $?" >>"$WORK/$impl/ispc-version"
   fi
 }
 
@@ -97,18 +97,18 @@ check_case() {
   run_impl new
 
   local diffs='' f
-  for f in B1-exit-code B2-workflow-commands B3-github-path B4-url B5-info B6-tree B7-workspace B8-ispc-version; do
+  for f in exit-code workflow-commands github-path url info tree workspace ispc-version; do
     cmp -s "$WORK/old/$f" "$WORK/new/$f" || diffs+=" $f"
   done
   local rc
-  rc=$(cat "$WORK/new/B1-exit-code")
+  rc=$(cat "$WORK/new/exit-code")
   if [[ $expect == --expect-fail && $rc == 0 ]]; then
     diffs+=" expected-failure"
   elif [[ $expect != --expect-fail && $rc != 0 ]]; then
     diffs+=" expected-success"
   fi
-  # D5: a failure emits exactly one workflow command.
-  if [[ $rc != 0 && $(wc -l <"$WORK/new/B2-workflow-commands") -ne 1 ]]; then
+  # A failure emits exactly one workflow command.
+  if [[ $rc != 0 && $(wc -l <"$WORK/new/workflow-commands") -ne 1 ]]; then
     diffs+=" one-workflow-command"
   fi
 
@@ -171,7 +171,7 @@ if [[ $MODE == full ]]; then
     check_case "$combo" 1.23.0 "${combo%%:*}" "${combo#*:}" --expect-fail
   done
 
-  # --- shell metacharacters (D3) and escaping (D5) -------------------------
+  # --- shell metacharacters and escaping ---------------------------------
   for v in '$(id)' '1.2.3;id' "1'2" '1"2' '`id`'; do
     check_case "version $v" "$v" linux '' --expect-fail
   done

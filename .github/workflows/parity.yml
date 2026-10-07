@@ -1,7 +1,7 @@
 name: Test Bash implementation
 
-# Tests install.sh on its own and against the Node implementation it replaced
-# (TRANSITION.md §4.B and §4.D). End-to-end tests of the action are in test.yml.
+# Tests install.sh on its own and against the Node implementation
+# it replaced. End-to-end tests of the action are in test.yml.
 
 permissions: read-all
 
@@ -21,7 +21,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
-      - name: Shellcheck (D4)
+      - name: Shellcheck
         run: shellcheck install.sh test/*.sh
 
   unit:
@@ -46,10 +46,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
-      - name: Unit tests (D1, D2, D3, D5, C10)
+      - name: Unit tests
         run: ${{ matrix.bash }} test/unit.sh
 
-      - name: Real download timeout tests (D2)
+      - name: Real download timeout tests
         if: runner.os == 'Linux'
         run: python3 test/download-timeout.py
 
@@ -91,6 +91,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
-      - name: Old vs new (B1-B8)
+      - name: Old vs new
         shell: bash
         run: bash test/parity.sh ${{ matrix.mode }}

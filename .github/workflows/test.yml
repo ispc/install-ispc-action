@@ -21,7 +21,7 @@ on:
 
 jobs:
   interface:
-    # A1-A3: only runs: may differ from the last Node release of action.yml.
+    # Only runs: may differ from the last Node release of action.yml.
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository
@@ -62,7 +62,7 @@ jobs:
         with:
           version: ${{ matrix.version }}
 
-      - name: Check ISPC version (C2)
+      - name: Check ISPC version
         if: matrix.version != 'latest'
         shell: pwsh
         run: |
@@ -82,7 +82,7 @@ jobs:
 
       # Shells add their own directories in front of PATH (pwsh, Git Bash's
       # /mingw64/bin), so check which ispc each shell resolves, not PATH[0].
-      - name: ispc resolves to the installed copy, bash (C3)
+      - name: ispc resolves to the installed copy, bash
         shell: bash
         run: |
           found=$(command -v ispc)
@@ -91,7 +91,7 @@ jobs:
           [[ $RUNNER_OS == Windows ]] && expected="$(cygpath -u "$GITHUB_WORKSPACE")/ispc-releases/"
           [[ $found == "$expected"ispc-v*/bin/ispc* ]]
 
-      - name: ispc resolves to the installed copy, pwsh (C3)
+      - name: ispc resolves to the installed copy, pwsh
         shell: pwsh
         run: |
           $found = (Get-Command ispc -CommandType Application | Select-Object -First 1).Source
@@ -99,7 +99,7 @@ jobs:
           $expected = Join-Path $env:GITHUB_WORKSPACE 'ispc-releases'
           if (-not $found.StartsWith($expected + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) { exit 1 }
 
-      - name: ispc resolves to the installed copy, cmd (C3)
+      - name: ispc resolves to the installed copy, cmd
         if: runner.os == 'Windows'
         shell: cmd
         run: |
@@ -117,7 +117,7 @@ jobs:
           ispc --version
 
   readme-quickstart:
-    # A4, A5: README examples as written, with only the default read-all permissions.
+    # README examples as written, with only the default read-all permissions.
     runs-on: ubuntu-latest
     name: build
     steps:
@@ -174,7 +174,7 @@ jobs:
     - run: ispc --version
 
   twice:
-    # C4: installing twice in one job overwrites like the Node action did.
+    # Installing twice in one job overwrites like the Node action did.
     strategy:
       fail-fast: false
       matrix:
@@ -204,7 +204,7 @@ jobs:
         run: ispc --version | grep -F 1.23.0
 
   caller-defaults:
-    # C5: the caller's defaults.run don't leak into the composite steps.
+    # The caller's defaults.run don't leak into the composite steps.
     strategy:
       fail-fast: false
       matrix:
@@ -236,7 +236,7 @@ jobs:
           ispc --version
 
   negative:
-    # C6: invalid input fails the step with an error annotation.
+    # Invalid input fails the step with an error annotation.
     strategy:
       fail-fast: false
       matrix:
@@ -284,7 +284,7 @@ jobs:
           [[ ! -e pwned ]]
 
   hostile-env:
-    # C7: the caller's environment doesn't change how install.sh runs.
+    # The caller's environment doesn't change how install.sh runs.
     strategy:
       fail-fast: false
       matrix:
@@ -311,7 +311,7 @@ jobs:
         run: ispc --version
 
   container:
-    # C8 and C10: container jobs with and without the required tools.
+    # Container jobs with and without the required tools.
     runs-on: ubuntu-24.04
     container: ubuntu:24.04
     steps:
@@ -358,7 +358,7 @@ jobs:
       - run: ispc --version
 
   windows-arm-bash:
-    # C9: Bash sometimes failed to start on windows-11-arm (actions/partner-runner-images#169).
+    # Bash sometimes failed to start on windows-11-arm (actions/partner-runner-images#169).
     # Spike: run with workflow_dispatch to try many start-ups; pull requests try a few.
     runs-on: windows-11-arm
     steps:
@@ -377,7 +377,7 @@ jobs:
           if ($failures -gt 0) { exit 1 }
 
   windows-arm-repeat:
-    # C9: the composite launcher itself, repeated on windows-11-arm.
+    # The composite launcher itself, repeated on windows-11-arm.
     strategy:
       fail-fast: false
       matrix:
