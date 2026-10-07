@@ -71,3 +71,29 @@ jobs:
       with:
         platform: ${{ matrix.platform }}
 ```
+
+## Self-hosted Runners and Containers
+
+The action is a composite action that runs a Bash script, so it needs these
+tools on `PATH`. All of them are preinstalled on GitHub-hosted runners.
+
+- Always: `bash`, `curl` and `tar`.
+- When `version` is empty or `latest`: `jq`, and `git` as a fallback if the
+  GitHub API is unavailable or rate limited.
+- When installing a `windows` release on Linux or macOS: `unzip`.
+- On Windows: Git for Windows, which provides `bash`.
+
+A missing tool fails the step with `install-ispc-action requires '<tool>' on PATH`.
+For example, a job running in a slim `ubuntu:24.04` container needs these first:
+
+```yaml
+    - run: apt-get update && apt-get install -y curl ca-certificates jq git
+```
+
+If you can't install these tools, pin the previous Node.js-based version of
+the action:
+
+```yaml
+    - name: install ISPC
+      uses: ispc/install-ispc-action@v1-node
+```
