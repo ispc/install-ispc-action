@@ -12,5 +12,42 @@ inputs:
     description: "Architecture to download release of ispc for, on MacOS and Linux platforms."
     required: false
 runs:
-  using: 'node24'
-  main: 'build/main.cjs'
+  using: composite
+  steps:
+    - name: Install ispc
+      if: runner.os != 'Windows'
+      # Clean the env before bash starts: the caller's BASH_ENV/ENV/SHELLOPTS must not alter the script.
+      shell: /usr/bin/env -u ENV -u BASH_ENV -u CDPATH -u SHELLOPTS -u BASHOPTS /bin/sh -eu {0}
+      working-directory: ${{ github.workspace }}
+      env:
+        INPUT_VERSION: ${{ inputs.version }}
+        INPUT_PLATFORM: ${{ inputs.platform }}
+        INPUT_ARCHITECTURE: ${{ inputs.architecture }}
+        ISPC_RUNNER_OS: ${{ runner.os }}
+        ISPC_RUNNER_ARCH: ${{ runner.arch }}
+      run: |
+        command -v bash >/dev/null 2>&1 || { echo "::error::install-ispc-action requires 'bash' on PATH"; exit 1; }
+        exec bash --noprofile --norc "${GITHUB_ACTION_PATH:?}/install.sh"
+
+    - name: Install ispc
+      if: runner.os == 'Windows'
+      # Windows PowerShell 5.1 is always present on Windows (pwsh is not), so it's used as the launcher.
+      shell: powershell
+      working-directory: ${{ github.workspace }}
+      env:
+        INPUT_VERSION: ${{ inputs.version }}
+        INPUT_PLATFORM: ${{ inputs.platform }}
+        INPUT_ARCHITECTURE: ${{ inputs.architecture }}
+        ISPC_RUNNER_OS: ${{ runner.os }}
+        ISPC_RUNNER_ARCH: ${{ runner.arch }}
+      run: |
+        foreach ($n in 'ENV','BASH_ENV','CDPATH','SHELLOPTS','BASHOPTS') { Remove-Item "Env:$n" -ErrorAction Ignore }
+        # Prefer Git Bash over other bash.exe on PATH, such as the WSL launcher in System32.
+        $bash = Join-Path $env:ProgramFiles 'Git\bin\bash.exe'
+        if (-not (Test-Path -LiteralPath $bash)) {
+          $cmd = Get-Command bash -CommandType Application -ErrorAction Ignore | Select-Object -First 1
+          if (-not $cmd) { Write-Output "::error::install-ispc-action requires 'bash' on PATH"; exit 1 }
+          $bash = $cmd.Source
+        }
+        & $bash --noprofile --norc "$env:GITHUB_ACTION_PATH\install.sh"
+        exit $LASTEXITCODE
