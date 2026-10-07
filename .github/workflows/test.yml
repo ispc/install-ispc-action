@@ -80,29 +80,40 @@ jobs:
       - name: ISPC support matrix
         run: ispc --support-matrix
 
-      - name: Bin dir first in PATH, bash (C3)
+      # Shells add their own directories in front of PATH (pwsh, Git Bash's
+      # /mingw64/bin), so check which ispc each shell resolves, not PATH[0].
+      - name: ispc resolves to the installed copy, bash (C3)
         shell: bash
         run: |
-          first=$(printf '%s' "$PATH" | cut -d: -f1)
-          echo "First PATH entry: $first"
-          case "$first" in */ispc-releases/ispc-v*/bin) ;; *) exit 1 ;; esac
-          [[ $(command -v ispc) == "$first/ispc"* ]]
+          found=$(command -v ispc)
+          echo "ispc resolves to $found"
+          expected="$GITHUB_WORKSPACE/ispc-releases/"
+          [[ $RUNNER_OS == Windows ]] && expected="$(cygpath -u "$GITHUB_WORKSPACE")/ispc-releases/"
+          [[ $found == "$expected"ispc-v*/bin/ispc* ]]
 
-      - name: Bin dir first in PATH, pwsh (C3)
+      - name: ispc resolves to the installed copy, pwsh (C3)
         shell: pwsh
         run: |
-          $first = ($env:PATH -split [IO.Path]::PathSeparator)[0]
-          Write-Output "First PATH entry: $first"
-          if ($first -notmatch '[\\/]ispc-releases[\\/]ispc-v[^\\/]+[\\/]bin$') { exit 1 }
+          $found = (Get-Command ispc -CommandType Application | Select-Object -First 1).Source
+          Write-Output "ispc resolves to $found"
           $expected = Join-Path $env:GITHUB_WORKSPACE 'ispc-releases'
-          if (-not $first.StartsWith($expected)) { Write-Output "Not under $expected"; exit 1 }
+          if (-not $found.StartsWith($expected + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) { exit 1 }
 
-      - name: Bin dir first in PATH, cmd (C3)
+      - name: ispc resolves to the installed copy, cmd (C3)
         if: runner.os == 'Windows'
         shell: cmd
         run: |
-          for /f "tokens=1 delims=;" %%p in ("%PATH%") do echo First PATH entry: %%p
-          where ispc
+          setlocal EnableDelayedExpansion
+          set "expected=%GITHUB_WORKSPACE%\ispc-releases\"
+          for /f "delims=" %%i in ('where ispc') do (
+            set "found=%%i"
+            goto :check
+          )
+          echo ispc not found
+          exit /b 1
+          :check
+          echo ispc resolves to !found!
+          if /i "!found:%expected%=!"=="!found!" exit /b 1
           ispc --version
 
   readme-quickstart:
