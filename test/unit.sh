@@ -51,6 +51,7 @@ stub_curl() {
       -o) out=$2; shift ;;
       -D) hdr=$2; shift ;;
       -w) shift ;;
+      --retry | --connect-timeout | --speed-limit | --speed-time) shift ;;
       -*) ;;
       *) url=$1 ;;
     esac
@@ -148,6 +149,25 @@ check "fail exits 1" 1 $?
 trim_out=$(source "$SCRIPT"; get_input $' \t 1.23.0 \n'; printf '[%s]' "$REPLY")
 check "get_input trims whitespace" '[1.23.0]' "$trim_out"
 
+unicode_space=$'\xc2\xa0\xef\xbb\xbf\xe1\x9a\x80\xe2\x80\x83\xe2\x80\xa8\xe2\x80\xa9\xe2\x80\xaf\xe2\x81\x9f\xe3\x80\x80'
+for trim_locale in C "${LC_ALL:-${LANG:-C}}"; do
+  trim_out=$(export LC_ALL=$trim_locale; source "$SCRIPT"; get_input "$unicode_space 1.23.0 $unicode_space"; printf '[%s]' "$REPLY")
+  check "get_input trims Unicode whitespace in $trim_locale" '[1.23.0]' "$trim_out"
+  trim_out=$(export LC_ALL=$trim_locale; source "$SCRIPT"; get_input "$unicode_space"; printf '[%s]' "$REPLY")
+  check "get_input trims Unicode-only input in $trim_locale" '[]' "$trim_out"
+done
+for non_space in $'\xc2\x85' $'\xe1\xa0\x8e' $'\xe2\x80\x8b'; do
+  trim_out=$(source "$SCRIPT"; get_input "$non_space 1.23.0 $non_space"; printf '%s' "$REPLY")
+  check "get_input preserves non-JavaScript whitespace $(printf '%q' "$non_space")" "$non_space 1.23.0 $non_space" "$trim_out"
+done
+trim_out=$(source "$SCRIPT"; get_input " ${unicode_space}1${unicode_space}2 "; printf '%s' "$REPLY")
+check "get_input preserves internal Unicode whitespace" "1${unicode_space}2" "$trim_out"
+
+PENDING_SEQ=("0 200 $TGZ")
+run_main "INPUT_VERSION=${unicode_space}1.23.0${unicode_space}" \
+  "INPUT_PLATFORM=${unicode_space}linux${unicode_space}" "INPUT_ARCHITECTURE=${unicode_space}x86_64${unicode_space}"
+check "all inputs accept surrounding Unicode whitespace" "0|$URL_123" "$RC|$(head -n 1 "$CASE_DIR/curl.log")"
+
 # --- validation (no network) -----------------------------------------------
 
 for v in v1.23.0 1.23 1.23.0rc1 '$(id)' '1.2.3;id' "1.2.3'" '1.2.3"' $'1.2.3\nid'; do
@@ -213,8 +233,10 @@ retry_case "404 isn't retried" 1 1 "::error::Unexpected HTTP response: 404" '0 4
 retry_case "204 isn't retried" 1 1 "::error::Unexpected HTTP response: 204" '0 204' "0 200 $TGZ"
 retry_case "DNS failure is retried" 0 2 "" '6 000' "0 200 $TGZ"
 retry_case "connection refusal is retried" 0 2 "" '7 000' "0 200 $TGZ"
+retry_case "stalled transfer timeout is retried" 0 2 "" '28 200' "0 200 $TGZ"
 retry_case "interrupted transfer is retried" 0 3 "" '18 200' '56 200' "0 200 $TGZ"
 retry_case "persistent transport failure stops after 3" 1 3 "::error::Download failed: curl exited with code 7" '7 000' '7 000' '7 000'
+retry_case "persistent timeout stops after 3" 1 3 "::error::Download failed: curl exited with code 28" '28 000' '28 000' '28 000'
 
 PENDING_SEQ=('18 200' '0 503' "0 200 $TGZ")
 run_main INPUT_VERSION=1.23.0

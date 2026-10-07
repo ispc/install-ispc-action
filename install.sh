@@ -37,11 +37,28 @@ require() {
   command -v "$1" >/dev/null 2>&1 || fail "install-ispc-action requires '$1' on PATH"
 }
 
-# Sets REPLY to the input value with surrounding whitespace removed.
+# Sets REPLY to the input value with JavaScript String.trim() whitespace removed.
 get_input() {
-  local v=$1
-  v=${v#"${v%%[![:space:]]*}"}
-  v=${v%"${v##*[![:space:]]}"}
+  local v=$1 before space
+  # UTF-8 byte escapes also work in bash 3.2 and with LC_ALL=C. A character
+  # class would match individual bytes in that locale, rather than whole
+  # Unicode characters. Do not include NEL, U+180E or zero-width space.
+  local whitespace=(
+    $'\t' $'\n' $'\v' $'\f' $'\r' ' ' $'\xc2\xa0' $'\xe1\x9a\x80'
+    $'\xe2\x80\x80' $'\xe2\x80\x81' $'\xe2\x80\x82' $'\xe2\x80\x83'
+    $'\xe2\x80\x84' $'\xe2\x80\x85' $'\xe2\x80\x86' $'\xe2\x80\x87'
+    $'\xe2\x80\x88' $'\xe2\x80\x89' $'\xe2\x80\x8a' $'\xe2\x80\xa8'
+    $'\xe2\x80\xa9' $'\xe2\x80\xaf' $'\xe2\x81\x9f' $'\xe3\x80\x80'
+    $'\xef\xbb\xbf'
+  )
+  while :; do
+    before=$v
+    for space in "${whitespace[@]}"; do
+      v=${v#"$space"}
+      v=${v%"$space"}
+    done
+    [[ $v != "$before" ]] || break
+  done
   REPLY=$v
 }
 
@@ -249,7 +266,10 @@ download() {
   local url=$1 out=$2 attempt=1 max_attempts=3 code rc
   while :; do
     rm -f "$out"
-    if code=$(curl -sSL --retry 0 -w '%{http_code}' -o "$out" "$url"); then rc=0; else rc=$?; fi
+    # Like the old HTTP client's three-minute socket timeout, bound connection
+    # and stalled-transfer time without limiting the duration of a healthy download.
+    if code=$(curl -sSL --retry 0 --connect-timeout 180 --speed-limit 1 --speed-time 180 \
+      -w '%{http_code}' -o "$out" "$url"); then rc=0; else rc=$?; fi
     if [[ $rc == 0 && $code == 200 ]]; then
       return 0
     fi
@@ -285,6 +305,11 @@ extract() {
     unzip -o -q "$archive" -d "$dest" || fail "Unable to extract $archive"
   elif is_windows_host; then
     local win_archive win_dest
+    # Windows PowerShell 5.1 rejects extensionless paths in Expand-Archive.
+    if [[ $archive != *.zip ]]; then
+      mv "$archive" "$archive.zip" || fail "Unable to prepare ZIP archive $archive"
+      archive+=.zip
+    fi
     win_archive=$(cygpath -w "$archive") || fail "Unable to convert path $archive"
     win_dest=$(cygpath -w "$dest") || fail "Unable to convert path $dest"
     # Pass paths through the environment so they're never parsed as PowerShell code.

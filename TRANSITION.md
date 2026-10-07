@@ -137,8 +137,10 @@ Key implementation decisions in `install.sh`:
   format string. Every external command is guarded with `|| fail ...` so failures always surface as an
   annotation. The script is written as functions with a `main` guard
   (`[[ "${BASH_SOURCE[0]}" == "$0" ]] && main`) so tests can source it.
-- **Inputs**: trim with parameter expansion. Keep the same `INPUT_*` names as today, so local runs work the
-  same as `INPUT_VERSION=... node src/main.js` did.
+- **Inputs**: trim the exact JavaScript `String.trim()` whitespace set, including NBSP and BOM, with
+  parameter expansion over complete UTF-8 sequences. This must work in Bash 3.2 and non-UTF-8 locales.
+  Keep the same `INPUT_*` names as today, so local runs work the same as
+  `INPUT_VERSION=... node src/main.js` did.
 - **OS/arch detection**: use `runner.os`/`runner.arch`, mapped to Node's names (`X64→x64`, `ARM64→arm64`,
   `X86→ia32`, `ARM→arm`) so the error messages match. `uname -m` isn't used because it reports `x86_64`
   under emulation on Windows/macOS ARM. `runner.arch` is the arch of the runner's own Node binary, which
@@ -151,18 +153,22 @@ Key implementation decisions in `install.sh`:
   then print `git log -1 --format=%at <tag>` for each and stable-sort numerically, newest first
   (`sort -s -k1,1nr`). Ties keep `git tag` (alphabetical) order, which matches the stable JS `Array.sort`.
 - **Download**: an explicit loop with at most 3 attempts, using
-  `curl -sSL --retry 0 -w '%{http_code}' -o "$archive" "$url"` per attempt, where
+  `curl -sSL --retry 0 --connect-timeout 180 --speed-limit 1 --speed-time 180 -w '%{http_code}' -o "$archive" "$url"`
+  per attempt, where
   `archive="$RUNNER_TEMP/<random>"`. Capture the curl exit code and HTTP status separately: success
   requires both exit code 0 and HTTP 200. Retry transport failures (including DNS failures, connection
   refusal and interrupted transfers), every HTTP 5xx, and HTTP 408/429. Any other non-200 status fails
   immediately with `Unexpected HTTP response: <code>`. Discard partial downloads before retrying, and
   wait a random integer 10–20 seconds between attempts, matching tool-cache. Curl's built-in retry
   policy is narrower; `--retry-all-errors` with `--fail` would also retry 404, so neither is used.
+  Connection and stalled-transfer timeouts are three minutes, comparable to the old HTTP client's
+  socket timeout; a healthy download may take longer than three minutes.
 - **Extract**: `mkdir -p ispc-releases`, then:
   - tar: `tar -xzf <file> -C ispc-releases`
   - zip: `unzip -o -q <file> -d ispc-releases` if `unzip` exists, otherwise
     `powershell -NoProfile -Command "Expand-Archive -LiteralPath ... -DestinationPath ... -Force"`
-    (always present on Windows)
+    (always present on Windows). Rename extensionless temporary ZIP archives to `.zip` before calling
+    Windows PowerShell 5.1, which validates the filename extension.
 - **PATH**: `bindir="$PWD/ispc-releases/$name/bin"`. On Windows, convert with `cygpath -w` so `$GITHUB_PATH`
   gets the same `D:\...\bin` string as before. Append with `printf '%s\r\n' "$bindir" >> "$GITHUB_PATH"`
   on Windows and `printf '%s\n' "$bindir" >> "$GITHUB_PATH"` elsewhere. This preserves Node's native
