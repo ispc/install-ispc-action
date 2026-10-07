@@ -8,6 +8,8 @@
 # Host detection (set by action.yml from runner.os/runner.arch, falls back to uname):
 #   ISPC_RUNNER_OS (Linux|macOS|Windows), ISPC_RUNNER_ARCH (X86|X64|ARM|ARM64)
 #
+# Keep this compatible with bash 3.2 (macOS /bin/bash on self-hosted runners).
+#
 # Local run:
 #   RUNNER_TEMP=/tmp/rt GITHUB_PATH=/tmp/p INPUT_VERSION=1.23.0 bash install.sh
 
