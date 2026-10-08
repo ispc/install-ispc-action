@@ -173,7 +173,8 @@ latest_version() {
   hdr=$(mktemp "$tmp/ispc-api-headers.XXXXXX") || fail "Unable to create temporary file in $tmp"
   body=$(mktemp "$tmp/ispc-api-body.XXXXXX") || fail "Unable to create temporary file in $tmp"
   # HTTP/1.1 so the status line carries a reason phrase, which Node's fetch reported as statusText.
-  code=$(curl -sSL --http1.1 -D "$hdr" -o "$body" -w '%{http_code}' "$ISPC_API_URL") || fail 'fetch failed'
+  code=$(curl -sSL --http1.1 --connect-timeout 10 --max-time 300 \
+    -D "$hdr" -o "$body" -w '%{http_code}' "$ISPC_API_URL") || fail 'fetch failed'
   if [[ $code != 200 ]]; then
     # The header dump may include proxy and redirect responses; the last status line is the final one.
     text=$(tr -d '\r' <"$hdr" | grep '^HTTP/' | tail -n 1 | cut -s -d ' ' -f 3-) || text=''
