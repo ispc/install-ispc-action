@@ -1,43 +1,35 @@
-# Install Node.js
+# Requirements
 
-To develop and test the action, you need to install Node.js. To install
-Node.js, use your OS package manager or follow the instruction on the
-[Node.js website](https://nodejs.org/en/learn/getting-started/how-to-install-nodejs).
-
-# Install Dependencies
-
-```bash
-npm install
-```
+The action is a single Bash script, `install.sh`. To run it locally you need
+`bash`, `curl` and `tar`, plus `jq` and `git` to resolve the latest version and
+`unzip` to extract Windows releases on Linux or macOS. Linting needs
+[ShellCheck](https://www.shellcheck.net/).
 
 # Lint Code
 
 ```bash
-npm run lint-fix
+shellcheck install.sh test/*.sh
 ```
-
-# Bundle Action
-
-```bash
-npm run build
-```
-
-It is important to bundle the action before running it locally or pushing it to
-the remote repository.
 
 # Run Local Tests
 
-To run the action locally, set the `RUNNER_TEMP` environment variable to a
-temporary directory. Then use the run script to execute the action:
+```bash
+bash test/unit.sh
+python3 test/download-timeout.py
+```
+
+# Run the Action Locally
+
+Set `RUNNER_TEMP` to a temporary directory and `GITHUB_PATH` to a file that
+receives the ISPC `bin` directory, then run the script:
 
 ```bash
-export RUNNER_TEMP=/tmp/runner_temp 
-npm run run
+RUNNER_TEMP=/tmp/rt GITHUB_PATH=/tmp/p INPUT_VERSION=1.23.0 bash install.sh
 ```
 
 To provide input variables to the action, set the environment variables before
-running the action:
+running the script:
 
 ```bash
-INPUT_PLATFORM=macOS INPUT_VERSION=1.23.0 INPUT_ARCHITECTURE=x86_64 npm run run
+RUNNER_TEMP=/tmp/rt GITHUB_PATH=/tmp/p INPUT_PLATFORM=macOS INPUT_VERSION=1.23.0 INPUT_ARCHITECTURE=x86_64 bash install.sh
 ```

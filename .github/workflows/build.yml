@@ -1,4 +1,4 @@
-name: Build install ISPC action
+name: Lint install ISPC action
 
 permissions: read-all
 
@@ -27,9 +27,5 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
-      - name: Build action
-        run: |
-          npm install
-          npm run lint
-          npm run build
-          git diff --exit-code
+      - name: Shellcheck
+        run: shellcheck install.sh test/*.sh
