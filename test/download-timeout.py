@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Copyright 2026, Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 """Test real curl timeouts and retries against a stalled loopback HTTP server."""
 

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Copyright 2026, Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 #
 # Installs an ISPC release and adds its bin directory to $GITHUB_PATH.

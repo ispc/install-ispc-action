@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Copyright 2026, Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 #
 # Unit tests for install.sh. They need no network: curl is replaced by a stub
