@@ -1,3 +1,6 @@
+# Copyright 2026, Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
 name: Unit tests
 
 # Tests install.sh on its own. End-to-end tests of the action are in test.yml.

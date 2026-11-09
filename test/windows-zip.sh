@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Copyright 2026, Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 #
 # Exercises the real Windows PowerShell 5.1 fallback with unzip unavailable.
